@@ -310,7 +310,8 @@ export default function Home() {
       </div>
 
       <footer className="mt-12 text-center text-gray-600 text-sm py-8 border-t border-white/5">
-        <p>&copy; {new Date().getFullYear()} Linker. Made for seamless sharing.</p>
+        <p>&copy; {new Date().getFullYear()} Linker. Created by <span className="text-gray-400">Ahmed Elmwafy</span></p>
+        <p className="mt-1 text-xs opacity-50">ahmedelmwafy@gmail.com</p>
       </footer>
     </main>
   );

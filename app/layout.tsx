@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Linker | Ultimate Cross-Device Clipboard",
   description: "Share text, links, and all media types between your PC, Laptop, and iPhone instantly with a professional glassmorphic experience.",
   keywords: ["clipboard sync", "file sharing", "cross-platform", "productivity", "iPhone sync", "PC to iPhone"],
-  authors: [{ name: "Linker Team" }],
+  authors: [{ name: "Ahmed Elmwafy", url: "mailto:ahmedelmwafy@gmail.com" }],
   icons: {
     icon: "/favicon.png",
     apple: "/logo.png",
