@@ -24,6 +24,8 @@ export default function Home() {
   const [localIp, setLocalIp] = useState("");
   const [isClient, setIsClient] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Set isClient to true and fetch local IP when component mounts
   useEffect(() => {
@@ -46,6 +48,9 @@ export default function Home() {
   }, []);
 
   const fetchClipboard = useCallback(async () => {
+    // Don't overwrite if the user is currently typing
+    if (isTyping) return;
+
     try {
       const res = await fetch("/api/clipboard");
       const data = await res.json();
@@ -55,7 +60,7 @@ export default function Home() {
     } catch (error) {
       console.error("Failed to fetch clipboard:", error);
     }
-  }, []);
+  }, [isTyping]);
 
   useEffect(() => {
     fetchClipboard();
@@ -65,6 +70,17 @@ export default function Home() {
 
   const updateText = async (newText: string) => {
     setText(newText);
+    setIsTyping(true);
+
+    // Clear existing timeout
+    if (typingTimeout) clearTimeout(typingTimeout);
+
+    // Set a new timeout to mark typing as finished after 2 seconds of inactivity
+    const timeout = setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
+    setTypingTimeout(timeout);
+
     try {
       await fetch("/api/clipboard", {
         method: "POST",
@@ -105,7 +121,10 @@ export default function Home() {
 
   if (!isClient) return null;
 
-  const connectionUrl = localIp ? `http://${localIp}:3000` : "";
+  // If on Netlify/Cloud, use the current window URL. If on Localhost, use the detected IP.
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const currentDomain = typeof window !== 'undefined' ? window.location.origin : '';
+  const connectionUrl = isLocalhost && localIp ? `http://${localIp}:3000` : currentDomain;
 
   return (
     <main className="min-h-screen p-4 md:p-8 max-w-6xl mx-auto">
