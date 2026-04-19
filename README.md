@@ -1,41 +1,49 @@
-# Linker - Cross-Device Clipboard
+# 🔗 Linker
 
-Linker is a premium tool designed to share text, links, and images between your PC/Laptop and iPhone seamlessly.
+Linker is a professional, glassmorphic tool for seamless cross-device synchronization. Copy text, links, and files on your PC and have them instantly available on your iPhone or other devices on your local network.
 
-## Getting Started
+![Linker Header](public/logo.png)
 
-To run the application locally, follow these steps:
+## ✨ Features
+- **Instant Sync**: Real-time clipboard sharing.
+- **Media Support**: Share images, PDFs, and files effortlessly.
+- **Local Network Focus**: 100% private. Your data stays on your machine.
+- **Premium Design**: Modern glassmorphic UI with dark mode.
+- **Auto-IP Detection**: QR code generated automatically for easy mobile connection.
 
-1.  **Install Dependencies**:
-    ```bash
-    npm install
-    ```
+## 🚀 Quick Start (Local Setup)
 
-2.  **Start the Development Server**:
-    ```bash
-    npm run dev
-    ```
+To run Linker on your own machine:
 
-3.  **Access on PC**:
-    Open [http://localhost:3000](http://localhost:3000) in your browser.
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/ahmedelmwafy/linker.git
+   cd linker
+   ```
 
-4.  **Connect your iPhone**:
-    - Ensure your iPhone and PC are on the same Wi-Fi network.
-    - Find your PC's local IP address (e.g., `192.168.1.10`).
-        - On Linux: Run `hostname -I`
-        - On Windows: Run `ipconfig`
-    - Enter this IP address in the "Connect iPhone" section on the Linker dashboard.
-    - Scan the generated QR code with your iPhone's camera.
+2. **Run the setup script**:
+   ```bash
+   bash setup.sh
+   ```
 
-## Features
+3. **Start the server**:
+   ```bash
+   npm run dev
+   ```
 
-- **Instant Text Sync**: Paste links or text on one device and see them on the other.
-- **Image Sharing**: Upload images to a shared gallery.
-- **Glassmorphic UI**: A modern, premium design for a great user experience.
-- **Auto-polling**: Keeps your clipboard in sync without manual refreshes.
+4. **Connect your phone**:
+   Open the URL shown in the terminal (or `http://localhost:3000`) on your PC and scan the QR code with your phone.
 
-## Tech Stack
+## 🛠️ Technology Stack
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS & Vanilla CSS
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **QR Codes**: qrcode.react
 
-- **Frontend**: Next.js (App Router), React, Lucide Icons, Framer Motion.
-- **Styling**: Vanilla CSS with a custom design system.
-- **Persistence**: Local JSON storage (`clipboard.json`).
+## 👤 Author
+**Ahmed Elmwafy**
+Email: ahmedelmwafy@gmail.com
+
+---
+*Made for seamless sharing.*
