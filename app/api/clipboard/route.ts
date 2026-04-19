@@ -11,12 +11,15 @@ const IMGBB_API_KEY = '6389731c687f134713a1ebb5807d0d95';
 const useKV = !!process.env.KV_REST_API_URL;
 
 async function getClipboard() {
+  console.log("--- GET Clipboard ---");
+  console.log("Mode:", useKV ? "Vercel KV" : "Local File");
+  
   if (useKV) {
     try {
       const data = await kv.get('clipboard');
       return data || { text: '', files: [], lastUpdated: new Date().toISOString() };
     } catch (e) {
-      console.error("KV Error:", e);
+      console.error("CRITICAL: KV GET failed:", e);
     }
   }
 
@@ -29,16 +32,25 @@ async function getClipboard() {
 }
 
 async function saveClipboard(data: any) {
+  console.log("--- SAVE Clipboard ---");
+  console.log("Mode:", useKV ? "Vercel KV" : "Local File");
+
   if (useKV) {
     try {
       await kv.set('clipboard', data);
+      console.log("KV Save Successful");
       return;
     } catch (e) {
-      console.error("KV Save Error:", e);
+      console.error("CRITICAL: KV SET failed:", e);
     }
   }
 
-  await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+  try {
+    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+    console.log("Local Save Successful");
+  } catch (e) {
+    console.error("Local Save Failed:", e);
+  }
 }
 
 export async function GET() {
@@ -51,26 +63,28 @@ export async function POST(request: Request) {
   const currentData = await getClipboard();
   let updatedData = { ...currentData };
 
-  if (contentType.includes('application/json')) {
-    const newData = await request.json();
-    updatedData = {
-      ...currentData,
-      ...newData,
-      lastUpdated: new Date().toISOString(),
-    };
-  } else if (contentType.includes('multipart/form-data')) {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    
-    if (file) {
-      const isImage = file.type.startsWith('image/');
+  try {
+    if (contentType.includes('application/json')) {
+      const newData = await request.json();
+      console.log("Updating text...");
+      updatedData = {
+        ...currentData,
+        ...newData,
+        lastUpdated: new Date().toISOString(),
+      };
+    } else if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      const file = formData.get('file') as File;
       
-      if (isImage) {
-        // Upload to imgBB
-        const imgbbFormData = new FormData();
-        imgbbFormData.append('image', file);
+      if (file) {
+        console.log("Processing file upload:", file.name);
+        const isImage = file.type.startsWith('image/');
         
-        try {
+        if (isImage) {
+          console.log("Uploading to imgBB...");
+          const imgbbFormData = new FormData();
+          imgbbFormData.append('image', file);
+          
           const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
             method: 'POST',
             body: imgbbFormData,
@@ -79,6 +93,7 @@ export async function POST(request: Request) {
           const result = await response.json();
           
           if (result.success) {
+            console.log("imgBB Upload Success:", result.data.url);
             const fileInfo = {
               name: file.name,
               url: result.data.url,
@@ -89,36 +104,38 @@ export async function POST(request: Request) {
               timestamp: new Date().toISOString()
             };
             updatedData.files = [fileInfo, ...(currentData.files || [])].slice(0, 50);
+          } else {
+            console.error("imgBB Upload Error:", result);
           }
-        } catch (error) {
-          console.error('imgBB upload failed:', error);
+        } else {
+          // Local fallback (won't work on Vercel production)
+          if (!useKV) {
+            const buffer = Buffer.from(await file.arrayBuffer());
+            const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+            const filePath = path.join(UPLOADS_DIR, fileName);
+            await fs.writeFile(filePath, buffer);
+            
+            const fileInfo = {
+              name: file.name,
+              url: `/uploads/${fileName}`,
+              type: 'file',
+              size: file.size,
+              timestamp: new Date().toISOString()
+            };
+            updatedData.files = [fileInfo, ...(currentData.files || [])].slice(0, 50);
+          } else {
+            console.warn("Non-image file uploads are only supported locally for now.");
+          }
         }
-      } else {
-        // Fallback for other files (Local storage)
-        // Note: This will only work on LocalHost, not on Vercel Serverless
-        try {
-          const buffer = Buffer.from(await file.arrayBuffer());
-          const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
-          const filePath = path.join(UPLOADS_DIR, fileName);
-          await fs.writeFile(filePath, buffer);
-          
-          const fileInfo = {
-            name: file.name,
-            url: `/uploads/${fileName}`,
-            type: 'file',
-            size: file.size,
-            timestamp: new Date().toISOString()
-          };
-          updatedData.files = [fileInfo, ...(currentData.files || [])].slice(0, 50);
-        } catch (e) {
-          console.error("Local file save failed (Expected on Vercel):", e);
-        }
+        
+        updatedData.lastUpdated = new Date().toISOString();
       }
-      
-      updatedData.lastUpdated = new Date().toISOString();
     }
-  }
 
-  await saveClipboard(updatedData);
-  return NextResponse.json(updatedData);
+    await saveClipboard(updatedData);
+    return NextResponse.json(updatedData);
+  } catch (error) {
+    console.error("POST Handler Error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
